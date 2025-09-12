@@ -16,21 +16,21 @@ datasets:
               - /export/share/datasets/vision/GQA/questions1.2/train_all_questions/train_all_questions_0.json
               - /export/share/datasets/vision/GQA/questions1.2/val_all_questions.json
           storage:
-              - /work/users/y/l/ylsung/data/gqa/annotations/train_all_questions_0.json
-              - /work/users/y/l/ylsung/data/gqa/annotations/val_all_questions.json
+              - /{dir_path}/datasets/gqa/annotations/train_all_questions_0.json
+              - /{dir_path}/datasets/gqa/annotations/val_all_questions.json
         val:
           url:
               - https://storage.googleapis.com/sfr-vision-language-research/LAVIS/datasets/aokvqa/aokvqa_v1p0_val.json
               - https://storage.googleapis.com/sfr-vision-language-research/LAVIS/datasets/aokvqa/large_vocab_train_lavis.json
           storage:
-              - /work/users/y/l/ylsung/data/aokvqa/annotations/aokvqa_v1p0_val.json
-              - /work/users/y/l/ylsung/data/aokvqa/annotations/large_vocab_train_lavis.json
+              - /{dir_path}/datasets/aokvqa/annotations/aokvqa_v1p0_val.json
+              - /{dir_path}/datasets/aokvqa/annotations/large_vocab_train_lavis.json
         test:
           url:
               - https://storage.googleapis.com/sfr-vision-language-research/LAVIS/datasets/aokvqa/aokvqa_v1p0_test.json
               - https://storage.googleapis.com/sfr-vision-language-research/LAVIS/datasets/aokvqa/large_vocab_train_lavis.json
           storage:
-              - /work/users/y/l/ylsung/data/aokvqa/annotations/aokvqa_v1p0_test.json
-              - /work/users/y/l/ylsung/data/aokvqa/annotations/large_vocab_train_lavis.json
+              - /{dir_path}/datasets/aokvqa/annotations/aokvqa_v1p0_test.json
+              - /{dir_path}/datasets/aokvqa/annotations/large_vocab_train_lavis.json
       images:
-          storage: /work/users/y/l/ylsung/data/gqa/images/
+          storage: /{dir_path}/datasets/gqa/images/

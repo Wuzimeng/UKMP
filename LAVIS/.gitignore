@@ -143,26 +143,3 @@ dmypy.json
 
 # Cython debug symbols
 cython_debug/
-
-# project-specific
-output/
-debug*/
-*.bak
-*.dir
-*.dat
-*.tsv
-*.gz
-old_output/
-final_activations/
-importance_measure/
-old_pruned_indices/
-pruned_checkpoint/
-pruned_indices/
-reuse39_eva_clip_output/
-sparsity_dict/
-slurm-*
-submit_*
-outputs/
-results/
-
-cache/

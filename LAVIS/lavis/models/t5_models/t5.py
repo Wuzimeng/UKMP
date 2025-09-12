@@ -27,7 +27,7 @@ class T5(BaseModel):
 
     def __init__(
         self,
-        t5_model="google/flan-t5-xl",
+        t5_model="/{dir_path}/models/google/flan-t5-xl",
         prompt="",
         max_txt_len=512,
         apply_lemmatizer=False,

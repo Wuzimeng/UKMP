@@ -21,7 +21,7 @@ model:
   num_query_token: 32
 
   # T5
-  t5_model: "google/flan-t5-xxl"
+  t5_model: "/{dir_path}/models/google/flan-t5-xxl"
 
   # generation configs
   prompt: ""

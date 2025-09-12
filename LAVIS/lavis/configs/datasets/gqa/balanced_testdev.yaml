@@ -15,16 +15,16 @@ datasets:
           url:
               - https://storage.googleapis.com/sfr-vision-language-research/LAVIS/datasets/gqa/train_balanced_questions.json
           storage:
-              - /work/users/y/l/ylsung/data/gqa/annotations/train_balanced_questions.json
+              - /{dir_path}/datasets/gqa/annotations/train_balanced_questions.json
         val:
           url:
             - https://storage.googleapis.com/sfr-vision-language-research/LAVIS/datasets/gqa/testdev_balanced_questions.json
           storage:
-            - /work/users/y/l/ylsung/data/gqa/annotations/testdev_balanced_questions.json
+            - /{dir_path}/datasets/gqa/annotations/testdev_balanced_questions.json
         test:
           url:
               - https://storage.googleapis.com/sfr-vision-language-research/LAVIS/datasets/gqa/test_balanced_questions.json
           storage:
-              - /work/users/y/l/ylsung/data/gqa/annotations/test_balanced_questions.json
+              - /{dir_path}/datasets/gqa/annotations/test_balanced_questions.json
       images:
-          storage: /work/users/y/l/ylsung/data/gqa/images/
+          storage: /{dir_path}/datasets/gqa/images/

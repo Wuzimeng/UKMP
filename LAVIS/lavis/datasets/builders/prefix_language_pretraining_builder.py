@@ -3,6 +3,9 @@
  All rights reserved.
  SPDX-License-Identifier: BSD-3-Clause
  For full license text, see the LICENSE file in the repo root or https://opensource.org/licenses/BSD-3-Clause
+
+ Modified by Zimeng Wu in 2025
+ - Added support for the cc595k dataset.
 """
 
 import os
@@ -21,6 +24,16 @@ class PrefixConceptualCaption3MBuilder(BaseDatasetBuilder):
         "default": "configs/datasets/prefix_conceptual_caption/defaults_3m.yaml"
     }
 
+
+    
+@registry.register_builder("prefix_conceptual_caption_595k")
+class PrefixConceptualCaption595KBuilder(BaseDatasetBuilder):
+    train_dataset_cls = PrefixLanguagePretrainingDataset
+
+    DATASET_CONFIG_DICT = {
+        "default": "configs/datasets/prefix_conceptual_caption/cc3m_595k.yaml",
+        "select_1000": "configs/datasets/prefix_conceptual_caption/my_selected/random_from_cc595k.yaml"
+    }
 
 @registry.register_builder("prefix_conceptual_caption_12m")
 class PrefixConceptualCaption12MBuilder(BaseDatasetBuilder):

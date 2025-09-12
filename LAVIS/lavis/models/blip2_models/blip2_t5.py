@@ -5,16 +5,16 @@
  For full license text, see the LICENSE file in the repo root or https://opensource.org/licenses/BSD-3-Clause
 """
 import logging
-import random 
 
 import torch
 import torch.nn as nn
-from torch.cuda.amp import autocast as autocast
-from transformers import T5TokenizerFast
-
 from lavis.common.registry import registry
 from lavis.models.blip2_models.blip2 import Blip2Base, disabled_train
-from lavis.models.blip2_models.modeling_t5 import T5Config, T5ForConditionalGeneration
+from lavis.models.blip2_models.modeling_t5 import (T5Config,
+                                                   T5ForConditionalGeneration)
+from torch.cuda.amp import autocast
+from torch.cuda.amp import autocast as autocast
+from transformers import T5TokenizerFast
 
 
 @registry.register_model("blip2_t5")
@@ -36,6 +36,8 @@ class Blip2T5(Blip2Base):
         "pretrain_flant5xl_vitL": "configs/models/blip2/blip2_pretrain_flant5xl_vitL.yaml",
         "pretrain_flant5xxl": "configs/models/blip2/blip2_pretrain_flant5xxl.yaml",
         "caption_coco_flant5xl": "configs/models/blip2/blip2_caption_flant5xl.yaml",
+        "caption_pretrain_flant5xl": "configs/models/blip2/blip2_caption_pretrain_flant5xl.yaml",
+        "caption_pretrain_flant5xl_vitL": "configs/models/blip2/blip2_caption_pretrain_flant5xl_vitl.yaml",
     }
 
     def __init__(
@@ -47,7 +49,7 @@ class Blip2T5(Blip2Base):
         vit_precision="fp16",
         freeze_vit=True,
         num_query_token=32,
-        t5_model="google/flan-t5-xl",
+        t5_model="/{dir_path}/models/google/flan-t5-xl",
         prompt="",
         max_txt_len=32,
         apply_lemmatizer=False,
@@ -169,7 +171,7 @@ class Blip2T5(Blip2Base):
 
             logits = outputs.logits
 
-            return {"loss": loss, "logits": logits}
+            return {"loss": loss, "logits": logits, "query_output": query_output, "encoder_embeds": outputs.encoder_last_hidden_state, "image_embeds": image_embeds, "labels": targets}
 
     def forward_with_vision_auxloss(self, samples):
         image = samples["image"]

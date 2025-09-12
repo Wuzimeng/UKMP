@@ -19,7 +19,7 @@ from transformers import BertTokenizer
 class BlipBase(BaseModel):
     @classmethod
     def init_tokenizer(cls):
-        tokenizer = BertTokenizer.from_pretrained("bert-base-uncased")
+        tokenizer = BertTokenizer.from_pretrained("/{dir_path}/models/bert-base-uncased")
         tokenizer.add_special_tokens({"bos_token": "[DEC]"})
         tokenizer.add_special_tokens({"additional_special_tokens": ["[ENC]"]})
         tokenizer.enc_token_id = tokenizer.additional_special_tokens_ids[0]

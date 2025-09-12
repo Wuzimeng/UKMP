@@ -44,4 +44,4 @@ class ImageTextPairDataset(BaseDataset, __DisplMixin):
         image = self.vis_processor(image)
         caption = self.text_processor(ann["caption"])
 
-        return {"image": image, "text_input": caption}
+        return {"image": image, "text_input": caption, "image_path": image_path}

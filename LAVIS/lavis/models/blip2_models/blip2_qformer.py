@@ -9,17 +9,14 @@ import logging
 import torch
 import torch.distributed as dist
 import torch.nn as nn
-from torch.cuda.amp import autocast as autocast
-from torch.nn import functional as F
-
 from lavis.common.registry import registry
 from lavis.models.base_model import all_gather_with_grad, concat_all_gather
-from lavis.models.blip2_models.blip2 import (
-    Blip2Base,
-    compute_sim_matrix,
-    disabled_train,
-)
-from lavis.models.blip_models.blip_outputs import BlipOutput, BlipOutputFeatures
+from lavis.models.blip2_models.blip2 import (Blip2Base, compute_sim_matrix,
+                                             disabled_train)
+from lavis.models.blip_models.blip_outputs import (BlipOutput,
+                                                   BlipOutputFeatures)
+from torch.cuda.amp import autocast as autocast
+from torch.nn import functional as F
 
 
 @registry.register_model("blip2")
@@ -40,6 +37,8 @@ class Blip2Qformer(Blip2Base):
         "pretrain": "configs/models/blip2/blip2_pretrain.yaml",
         "pretrain_vitL": "configs/models/blip2/blip2_pretrain_vitL.yaml",
         "coco": "configs/models/blip2/blip2_coco.yaml",
+        "ret_pretrain": "configs/models/blip2/blip2_ret_pretrain_flant5xl.yaml",
+        "ret_pretrain_vitL": "configs/models/blip2/blip2_ret_pretrain_flant5xl_vitl.yaml",
     }
 
     def __init__(
@@ -321,19 +320,21 @@ class Blip2Qformer(Blip2Base):
         return captions
 
     def forward_image(self, image):
-        image_embeds = self.ln_vision(self.visual_encoder(image))
+        with self.maybe_autocast():
+            image_embeds = self.ln_vision(self.visual_encoder(image))
         image_atts = torch.ones(image_embeds.size()[:-1], dtype=torch.long).to(
             image.device
         )
 
         query_tokens = self.query_tokens.expand(image_embeds.shape[0], -1, -1)
 
-        query_output = self.Qformer.bert(
-            query_embeds=query_tokens,
-            encoder_hidden_states=image_embeds,
-            encoder_attention_mask=image_atts,
-            return_dict=True,
-        )
+        with self.maybe_autocast():
+            query_output = self.Qformer.bert(
+                query_embeds=query_tokens,
+                encoder_hidden_states=image_embeds,
+                encoder_attention_mask=image_atts,
+                return_dict=True,
+            )
         return query_output.last_hidden_state, image_embeds
 
     def forward_text(self, text_tokens):
@@ -353,14 +354,15 @@ class Blip2Qformer(Blip2Base):
             image_inputs.device
         )
         attention_mask = torch.cat([query_atts, text_atts], dim=1)
-        output_itm = self.Qformer.bert(
-            text_ids,
-            query_embeds=query_tokens,
-            attention_mask=attention_mask,
-            encoder_hidden_states=image_inputs,
-            encoder_attention_mask=image_atts,
-            return_dict=True,
-        )
+        with self.maybe_autocast():
+            output_itm = self.Qformer.bert(
+                text_ids,
+                query_embeds=query_tokens,
+                attention_mask=attention_mask,
+                encoder_hidden_states=image_inputs,
+                encoder_attention_mask=image_atts,
+                return_dict=True,
+            )
         vl_embeddings = output_itm.last_hidden_state[:, : query_tokens.size(1), :]
         itm_logit = self.itm_head(vl_embeddings)
         itm_logit = itm_logit[:, :, 1].mean(dim=1)

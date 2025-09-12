@@ -1,0 +1,40 @@
+# Created by wzm
+
+model:
+  arch: caption_pretrain_flant5xl
+  load_finetuned: False
+
+  # pretrained: "https://storage.googleapis.com/sfr-vision-language-research/LAVIS/models/BLIP2/blip2_pretrained_flant5xl.pth"
+  pretrained: "/{dir_path}/models/blip2/blip2_pretrained_flant5xl.pth"
+  # finetuned: "https://storage.googleapis.com/sfr-vision-language-research/LAVIS/models/BLIP2/blip2_caption_flant5xl.pth"
+
+  # vit encoder
+  image_size: 364
+  drop_path_rate: 0
+  use_grad_checkpoint: False
+  vit_precision: "fp32"
+  freeze_vit: False
+
+  # Q-Former
+  num_query_token: 32
+
+  # T5
+  t5_model: "/{dir_path}/models/google/flan-t5-xl"
+
+  # generation configs
+  prompt: "a photo of"
+
+
+preprocess:
+    vis_processor:
+        train:
+          name: "blip_image_train"
+          image_size: 364
+        eval:
+          name: "blip_image_eval"
+          image_size: 364
+    text_processor:
+        train:
+          name: "blip_caption"
+        eval:
+          name: "blip_caption"

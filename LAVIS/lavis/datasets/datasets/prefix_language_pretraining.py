@@ -45,11 +45,10 @@ class PrefixLanguagePretrainingDataset(BaseDataset, __DisplMixin):
         image = self.vis_processor(image)
         caption = self.text_processor(ann["caption"])
 
-        split = random.randint(1, len(caption) // 2)
+        words = caption.split(" ")
+        split = random.randint(1, len(words) // 2)
+     
+        prefix = " ".join(words[:split])
+        output = " ".join(words[split:])
 
-        # split = random.Random(0).randint(1, len(caption) // 2)
-
-        prefix = caption[:split]
-        output = caption[split:]
-
-        return {"image": image, "text_input": prefix, "text_output": output}
+        return {"image": image, "text_input": prefix, "text_output": output, "image_path": image_path, "caption": caption, "indice": index}

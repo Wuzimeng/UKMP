@@ -7,4 +7,4 @@ env:
   # For default users
   # cache_root: "cache"
   # For internal use with persistent storage
-  cache_root: "/work/users/y/l/ylsung/cache"
+  cache_root: "/{dir_path}/cache"

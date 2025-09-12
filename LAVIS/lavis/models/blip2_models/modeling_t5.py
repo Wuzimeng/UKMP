@@ -21,35 +21,49 @@ import os
 import warnings
 from typing import Optional, Tuple, Union
 
+import einops
 import torch
 from torch import nn
 from torch.nn import CrossEntropyLoss
 from torch.utils.checkpoint import checkpoint
-
 from transformers.activations import ACT2FN
 from transformers.modeling_outputs import (
-    BaseModelOutput,
-    BaseModelOutputWithPastAndCrossAttentions,
-    Seq2SeqLMOutput,
-    Seq2SeqModelOutput,
-)
+    BaseModelOutput, BaseModelOutputWithPastAndCrossAttentions,
+    Seq2SeqLMOutput, Seq2SeqModelOutput)
 from transformers.modeling_utils import PreTrainedModel
-from transformers.pytorch_utils import (
-    ALL_LAYERNORM_LAYERS,
-    find_pruneable_heads_and_indices,
-    prune_linear_layer,
-)
-from transformers.utils import (
-    DUMMY_INPUTS,
-    DUMMY_MASK,
-    add_start_docstrings,
-    add_start_docstrings_to_model_forward,
-    is_torch_fx_proxy,
-    logging,
-    replace_return_docstrings,
-)
-from transformers.utils.model_parallel_utils import assert_device_map, get_device_map
 from transformers.models.t5.configuration_t5 import T5Config
+from transformers.pytorch_utils import (ALL_LAYERNORM_LAYERS,
+                                        find_pruneable_heads_and_indices,
+                                        prune_linear_layer)
+from transformers.utils import (DUMMY_INPUTS, DUMMY_MASK, add_start_docstrings,
+                                add_start_docstrings_to_model_forward,
+                                is_torch_fx_proxy, logging,
+                                replace_return_docstrings)
+from transformers.utils.model_parallel_utils import (assert_device_map,
+                                                     get_device_map)
+
+
+def vector_gather(vectors, indices):
+    """
+    Gathers (batched) vectors according to indices.
+    Arguments:
+        vectors: Tensor[N, L, D]
+        indices: Tensor[N, K] or Tensor[N]
+    Returns:
+        Tensor[N, K, D] or Tensor[N, D]
+    """
+    N, L, D = vectors.shape
+    squeeze = False
+    if indices.ndim == 1:
+        squeeze = True
+        indices = indices.unsqueeze(-1)
+    N2, K = indices.shape
+    assert N == N2
+    indices = einops.repeat(indices, "N K -> N K D", D=D)
+    out = torch.gather(vectors, dim=1, index=indices)
+    if squeeze:
+        out = out.squeeze(1)
+    return out
 
 
 logger = logging.get_logger(__name__)
@@ -593,6 +607,9 @@ class T5Attention(nn.Module):
         else:
             position_bias_masked = position_bias
 
+        if (not self.pruned_heads) and scores.shape[1] != position_bias_masked.shape[1]:# and torch.all(position_bias_masked==0):
+            position_bias_masked = position_bias_masked[:,0:1,:,:].repeat(1, scores.shape[1], 1, 1)
+
         scores += position_bias_masked
         attn_weights = nn.functional.softmax(scores.float(), dim=-1).type_as(
             scores
@@ -1038,7 +1055,7 @@ class T5Stack(T5PreTrainedModel):
             torch.cuda.set_device(self.first_device)
             self.embed_tokens = self.embed_tokens.to(self.first_device)
         use_cache = use_cache if use_cache is not None else self.config.use_cache
-        output_attentions = (
+        output_attentions = ( # False
             output_attentions
             if output_attentions is not None
             else self.config.output_attentions

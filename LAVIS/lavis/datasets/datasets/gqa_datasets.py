@@ -98,4 +98,5 @@ class GQAEvalDataset(VQAEvalDataset, __DisplMixin):
             "answer": answer,
             "question_id": ann["question_id"],
             "instance_id": ann["instance_id"],
+            'image_path': image_path,
         }

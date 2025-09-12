@@ -104,4 +104,6 @@ class COCOVQAEvalDataset(VQAEvalDataset, __DisplMixin):
             "text_input": question,
             "question_id": ann["question_id"],
             "instance_id": ann["instance_id"],
+            'image_path': image_path,
+            'tmp_answer': ann['answer'], 
         }

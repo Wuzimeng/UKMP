@@ -21,7 +21,7 @@ datasets:
           name: "blip_question"
     build_info:
         images:
-            storage: "/work/users/y/l/ylsung/data/gqa/images/"
+            storage: "/{dir_path}/datasets/gqa/images/"
 
 run:
   task: gqa

@@ -11,7 +11,7 @@ model:
   finetuned: ""
 
   # T5
-  t5_model: "google/flan-t5-xl"
+  t5_model: "/{dir_path}/models/google/flan-t5-xl"
 
   # generation configs
   prompt: ""

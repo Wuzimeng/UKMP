@@ -145,35 +145,18 @@ dmypy.json
 cython_debug/
 
 # project-specific
-output/
-debug*/
 *.bak
 *.dir
 *.dat
 *.tsv
 *.gz
-old_output/
-final_activations/
-importance_measure/
-old_pruned_indices/
-pruned_checkpoint/
-pruned_indices/
-reuse39_eva_clip_output/
 sparsity_dict/
-slurm-*
-submit_*
-outputs/
-results/
-llm_weights/
-out/
+importance_measure/
+
+output/
+debug*/
+pruned_checkpoint/
+tmux_result/
+tuned_checkpoint/
 
 cache/
-
-
-ukmp_prune.py
-README.md
-assets
-*/ukmp_prune.py
-torch_pruning/
-peft/
-structured_blip2/

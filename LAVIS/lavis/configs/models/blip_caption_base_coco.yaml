@@ -8,7 +8,8 @@ model:
   load_finetuned: True
 
   pretrained: "https://storage.googleapis.com/sfr-vision-language-research/BLIP/models/model_base_capfilt_large.pth"
-  finetuned: "https://storage.googleapis.com/sfr-vision-language-research/LAVIS/models/BLIP/blip_coco_caption_base.pth"
+  # finetuned: "https://storage.googleapis.com/sfr-vision-language-research/LAVIS/models/BLIP/blip_coco_caption_base.pth"
+  finetuned: "/{dir_path}/models/blip/blip_coco_caption_base.pth"
 
   # vit encoder
   vit_type: "base"

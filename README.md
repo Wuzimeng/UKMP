@@ -23,8 +23,8 @@ The main code is in `LAVIS/`. Please do everything in `LAVIS/` by `cd LAVIS/`.
 We recommend the requirements as follows.
 
 - Python == 3.9
-- Pytorch == 1.13.1
-- CUDA Version >= 11.7
+- Pytorch == 2.1.0
+- CUDA Version >= 11.8
 
 Install required editable `lavis` package by `pip install -e .`.
 
@@ -35,14 +35,18 @@ git clone https://github.com/Wuzimeng/UKMP.git
 cd UKMP
 conda create -n ukmp python=3.9
 conda activate ukmp
-pip install torch==1.13.1+cu117 torchvision==0.14.1+cu117 torchaudio==0.13.1 --extra-index-url https://download.pytorch.org/whl/cu117
+pip install torch==2.1.0 torchvision==0.16.0 torchaudio==2.1.0 --index-url https://download.pytorch.org/whl/cu118
 cd LAVIS
 pip install -e .
 ```
 
 ## Dataset
 
-Follow the scripts in `lavis/datasets/download_scripts/` to download the datasets.
+Follow the scripts in `lavis/datasets/download_scripts/` to download the datasets for evaluation.
+
+We use the CC595K subset, filtered from CC3M (by the LLAVA project), for pruning. 
+Please refer to <a href="https://huggingface.co/datasets/liuhaotian/LLaVA-CC3M-Pretrain-595K">LLaVA-CC3M-Pretrain-595K</a> to download the dataset and modify the dataset path in the `lavis/configs/datasets/prefix_conceptual_caption/cc3m_595k.yaml` file accordingly.
+You may need to convert the annotation contents according to the script in `lavis/datasets/download_scripts/reconstruct_cc595k.py`.
 
 ## Prune and Finetune
 

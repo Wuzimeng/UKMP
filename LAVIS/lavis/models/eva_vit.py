@@ -76,6 +76,7 @@ class Attention(nn.Module):
         all_head_dim = head_dim * self.num_heads
         self.scale = qk_scale or head_dim ** -0.5
 
+        self.head_dim = head_dim
         self.qkv = nn.Linear(dim, all_head_dim * 3, bias=False)
         if qkv_bias:
             self.q_bias = nn.Parameter(torch.zeros(all_head_dim))
@@ -118,7 +119,7 @@ class Attention(nn.Module):
         self.proj = nn.Linear(all_head_dim, dim)
         self.proj_drop = nn.Dropout(proj_drop)
 
-    def forward(self, x, rel_pos_bias=None):
+    def forward(self, x, rel_pos_bias=None, output_attn=False):
         B, N, C = x.shape
         qkv_bias = None
         if self.q_bias is not None:
@@ -131,6 +132,10 @@ class Attention(nn.Module):
 
         q = q * self.scale
         attn = (q @ k.transpose(-2, -1))
+        if output_attn:
+            attn_before_softmax = attn.clone()
+        else:
+            attn_before_softmax = None
 
         if self.relative_position_bias_table is not None:
             relative_position_bias = \
@@ -145,12 +150,12 @@ class Attention(nn.Module):
         
         attn = attn.softmax(dim=-1)
         attn = self.attn_drop(attn)
-
-        x = (attn @ v).transpose(1, 2).reshape(B, N, -1)
+        attn_out = attn @ v
+        x = attn_out.transpose(1, 2).reshape(B, N, -1)
         x = self.proj(x)
         x = self.proj_drop(x)
-        return x
 
+        return (x, attn_before_softmax) if output_attn else (x, None)
 
 class Block(nn.Module):
 
@@ -173,16 +178,21 @@ class Block(nn.Module):
             self.gamma_2 = nn.Parameter(init_values * torch.ones((dim)),requires_grad=True)
         else:
             self.gamma_1, self.gamma_2 = None, None
-
-    def forward(self, x, rel_pos_bias=None):
+            
+    def forward(self, x, rel_pos_bias=None, output_attn=False):
+        attn_output = self.attn(self.norm1(x), rel_pos_bias=rel_pos_bias, output_attn=output_attn)
+        
         if self.gamma_1 is None:
-            x = x + self.drop_path(self.attn(self.norm1(x), rel_pos_bias=rel_pos_bias))
+            x = x + self.drop_path(attn_output[0])
             x = x + self.drop_path(self.mlp(self.norm2(x)))
         else:
-            x = x + self.drop_path(self.gamma_1 * self.attn(self.norm1(x), rel_pos_bias=rel_pos_bias))
+            x = x + self.drop_path(self.gamma_1 * attn_output[0])
             x = x + self.drop_path(self.gamma_2 * self.mlp(self.norm2(x)))
-        return x
-
+        
+        if output_attn:
+            return (x, ) + attn_output[1:]
+        else:
+            return x
 
 class PatchEmbed(nn.Module):
     """ Image to Patch Embedding
@@ -342,7 +352,7 @@ class VisionTransformer(nn.Module):
         self.num_classes = num_classes
         self.head = nn.Linear(self.embed_dim, num_classes) if num_classes > 0 else nn.Identity()
 
-    def forward_features(self, x):
+    def forward_features(self, x, output_attn=False):
         x = self.patch_embed(x)
         batch_size, seq_len, _ = x.size()
 
@@ -353,11 +363,20 @@ class VisionTransformer(nn.Module):
         x = self.pos_drop(x)
 
         rel_pos_bias = self.rel_pos_bias() if self.rel_pos_bias is not None else None
+        attn_list, attn_array = [], None
         for blk in self.blocks:
             if self.use_checkpoint:
                 x = checkpoint.checkpoint(blk, x, rel_pos_bias)
             else:
-                x = blk(x, rel_pos_bias)
+                blk_output = blk(x, rel_pos_bias, output_attn=output_attn)
+                if output_attn:
+                    attn_list.append(blk_output[1])
+                    x = blk_output[0]
+                else:
+                    x = blk_output
+        
+        if output_attn:
+            attn_array = torch.stack(attn_list, dim=0)
 
         if self.num_classes > 0:
             # for EVA CLIP
@@ -365,20 +384,28 @@ class VisionTransformer(nn.Module):
 
             if self.fc_norm is not None:
                 t = x[:, 1:, :]
-                return self.fc_norm(t.mean(1))
+                return (self.fc_norm(t.mean(1)), attn_array) if output_attn else self.fc_norm(t.mean(1))
             else:
-                return x[:, 0]
+                return (x[:, 0], attn_array) if output_attn else x[:, 0]
 
         else:
             # for BLIP-2
+            return (x, attn_array) if output_attn else x
+
+    def forward(self, x, output_attn=False):
+        if output_attn:
+            feature_output = self.forward_features(x, output_attn)
+            x = feature_output[0]
+
+            if self.num_classes > 0:
+                x = self.head(x)
+            return (x, ) + feature_output[1:]
+        else:
+            x = self.forward_features(x)
+            
+            if self.num_classes > 0:
+                x = self.head(x)
             return x
-
-    def forward(self, x):
-        x = self.forward_features(x)
-
-        if self.num_classes > 0:
-            x = self.head(x)
-        return x
 
     def get_intermediate_layers(self, x):
         x = self.patch_embed(x)
@@ -455,11 +482,12 @@ def create_eva_vit_g(img_size=224,drop_path_rate=0.4,use_checkpoint=False,precis
         norm_layer=partial(nn.LayerNorm, eps=1e-6),
         use_checkpoint=use_checkpoint,
     )
-    url = "https://storage.googleapis.com/sfr-vision-language-research/LAVIS/models/BLIP2/eva_vit_g.pth"
-    cached_file = download_cached_file(
-        url, check_hash=False, progress=True
-    )
-    state_dict = torch.load(cached_file, map_location="cpu")    
+    # url = "https://storage.googleapis.com/sfr-vision-language-research/LAVIS/models/BLIP2/eva_vit_g.pth"
+    # cached_file = download_cached_file(
+    #     url, check_hash=False, progress=True
+    # )
+    # state_dict = torch.load(cached_file, map_location="cpu")   
+    state_dict = torch.load("/{dir_path}/models/blip2/eva_vit_g.pth", map_location="cpu")    
     interpolate_pos_embed(model,state_dict)
     
     incompatible_keys = model.load_state_dict(state_dict, strict=False)
